@@ -1,12 +1,14 @@
 #pragma once
 #include "type.h"
+#include "timer.h"
 
 #define va_list  __builtin_va_list
 #define va_start __builtin_va_start
 #define va_end   __builtin_va_end
 #define va_arg   __builtin_va_arg
 
-inline static void *memset(void *buf, char c, size_t n) {
+inline static void *memset(void *buf, char c, size_t n)
+{
     uint8_t *p = (uint8_t *) buf;
     if (n < SYSTEM_ARCH_BITS / 8)
         goto small;
@@ -23,8 +25,10 @@ small:
     return buf;
 }
 
-void sbi_putchar(char ch);
-
-long sbi_getchar(void);
-
 void printf(const char *fmt, ...);
+
+#define PANIC(fmt, ...)                                                        \
+    do {                                                                       \
+        printf("PANIC: %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);  \
+        while (1) {}                                                           \
+    } while (0)
