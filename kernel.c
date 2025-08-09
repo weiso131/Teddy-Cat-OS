@@ -1,5 +1,6 @@
 #include "util.h"
 #include "csr.h"
+#include "page.h"
 
 extern char __bss[], __bss_end[], __stack_top[];;
 
@@ -105,6 +106,16 @@ void kernel_main(void)
     memset(test_array, 'a', 16);
     printf("%s\n", test_array);
     
+    char *test1 = alloc_page(), *test2 = alloc_page();
+
+    printf("test1: %x, test2: %x\n", test1, test2);
+
+    free_page(test1);
+
+    char *test3 = alloc_page();
+
+    printf("test3: %x\n", test3);
+
     timer_wait(10000000);
     for (;;) {
         long c = sbi_getchar();
