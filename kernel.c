@@ -1,18 +1,27 @@
 #include "util.h"
 #include "csr.h"
 #include "page.h"
+#include "schedule.h"
+#include "reg.h"
 
 extern char __bss[], __bss_end[], __stack_top[];;
 
 
-void handle_trap(struct trap_frame *f)
+void handle_trap()
 {
+    static uint32_t ra;
+    ra = READ_REG(ra);
+
     uint32_t scause = READ_CSR(scause);
     uint32_t stval = READ_CSR(stval);
     uint32_t user_pc = READ_CSR(sepc);
     if (scause == 0x80000005) {
-        printf("timer interrupt\n");
-        timer_wait(10000000);
+        struct task *next = schedule();
+        switch_context(current, next);
+        current = next;
+        /* save the real ra*/
+        __asm__ __volatile__("sw %0, 12(sp)\n" ::"r"(ra));
+        timer_wait(TIME_SLICE);
     } else 
         PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }
@@ -58,7 +67,6 @@ void kernel_entry(void)
         "csrr a0, sscratch\n"
         "sw a0, 4 * 30(sp)\n"
 
-        "mv a0, sp\n"
         "call handle_trap\n"
 
         "lw ra,  4 * 0(sp)\n"
@@ -96,33 +104,30 @@ void kernel_entry(void)
     );
 }
 
+void test_func1()
+{
+    while(1) {
+        printf("task 1\n");
+        __asm__ __volatile__("wfi");
+    }
+}
 
+void test_func2()
+{
+    while(1) {
+        printf("task 2\n");
+        __asm__ __volatile__("wfi");
+    }  
+}
 
 void kernel_main(void)
 {
-    char test_array[17];
-
-    memset(__bss, 0, (size_t) __bss_end - (size_t) __bss);
-    memset(test_array, 'a', 16);
-    printf("%s\n", test_array);
+    create_process((uintptr_t)test_func1);
+    create_process((uintptr_t)test_func2);
     
-    char *test1 = alloc_page(), *test2 = alloc_page();
+    printf("%x, %x\n", test_func1, test_func2);
 
-    printf("test1: %x, test2: %x\n", test1, test2);
-
-    free_page(test1);
-
-    char *test3 = alloc_page();
-
-    printf("test3: %x\n", test3);
-
-    timer_wait(10000000);
-    for (;;) {
-        long c = sbi_getchar();
-        if (c < 0)
-            continue;
-        sbi_putchar(c);
-    }
+    init_schedule();
 }
 
 __attribute__((section(".text.boot")))
