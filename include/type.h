@@ -17,7 +17,8 @@ typedef uint32_t size_t;
 typedef unsigned long uintptr_t;
 typedef long intptr_t;
 
-struct sbiret {
-    long error;
-    long value;
+struct task {
+    uint32_t sepc, sp;
+    uint32_t *kernel_stack;
+    uint32_t *page_table;
 };

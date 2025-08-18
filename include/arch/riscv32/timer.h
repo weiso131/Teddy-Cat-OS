@@ -1,6 +1,6 @@
 #pragma once
-#include "type.h"
-#include "sbi.h"
+#include <type.h>
+#include <arch/riscv32/sbi.h>
 
 static inline uint64_t get_time(void)
 {

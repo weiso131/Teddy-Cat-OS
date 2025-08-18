@@ -1,5 +1,5 @@
 #pragma once
-#include "type.h"
+#include <type.h>
 
 #define SATP_SV32 (1u << 31)
 

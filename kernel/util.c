@@ -1,4 +1,6 @@
-#include "util.h"
+#include <kernel/util.h>
+#include <arch/riscv32/sbi.h>
+#include <type.h>
 
 void printf(const char *fmt, ...) {
     va_list vargs;

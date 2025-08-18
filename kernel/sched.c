@@ -1,4 +1,8 @@
-#include "schedule.h"
+#include <kernel/sched.h>
+#include <arch/riscv32/timer.h>
+#include <arch/riscv32/context.h>
+#include <kernel/util.h>
+#include <type.h>
 
 extern char __kernel_base[], __heap_end[];
 struct task *current;
@@ -15,15 +19,7 @@ void init_schedule()
 {
     current = schedule();
     timer_wait(TIME_SLICE);
-
-    __asm__ __volatile__(
-        "mv sp, %0\n"
-        "mv ra, %1\n"
-        "ret\n"
-        :
-        : "r" (current->kernel_stack + (1 << 12)), "r" (current->sepc)
-        : 
-    );
+    start_task(current);
 }
 
 struct task *schedule()
@@ -42,24 +38,6 @@ struct task *schedule()
     return &process_list[schedule_cnt];
 
 }
-
-void switch_context(struct task *current, struct task *next, uint32_t sp) 
-{
-    current->sp = sp;
-    __asm__ __volatile__(
-        "csrr t0, sepc\n"
-        "mv %0, t0\n"
-        "csrw sepc, %1\n"
-        "mv sp, %2\n"
-        "sfence.vma\n"
-        "csrw satp, %3\n"
-        "sfence.vma\n"
-        : "=&r" (current->sepc)
-        : "r" (next->sepc), "r" (next->sp), "r" (SATP_SV32 | ((uint32_t) next->page_table / PAGE_SIZE))
-        : "t0", "memory"
-    );    
-}
-
 
 int create_process(uintptr_t func)
 {

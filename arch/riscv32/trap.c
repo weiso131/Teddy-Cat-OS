@@ -1,11 +1,9 @@
-#include "util.h"
-#include "csr.h"
-#include "page.h"
-#include "schedule.h"
-#include "reg.h"
-
-extern char __bss[], __bss_end[], __stack_top[];;
-
+#include <type.h>
+#include <arch/riscv32/csr.h>
+#include <arch/riscv32/reg.h>
+#include <arch/riscv32/timer.h>
+#include <arch/riscv32/context.h>
+#include <kernel/sched.h>
 
 void handle_trap(uint32_t sp)
 {
@@ -107,62 +105,5 @@ void kernel_entry(void)
         "lw s11, 4 * 29(sp)\n"
         "lw sp,  4 * 30(sp)\n"
         "sret\n"
-    );
-}
-
-void test_func1()
-{
-    while(1) {
-        printf("task 1\n");
-        __asm__ __volatile__("wfi");
-    }
-}
-
-void test_func2()
-{
-    while(1) {
-        printf("task 2\n");
-        __asm__ __volatile__("wfi");
-    }  
-}
-
-void kernel_main(void)
-{
-    create_process((uintptr_t)test_func1);
-    create_process((uintptr_t)test_func2);
-    
-    printf("%x, %x\n", test_func1, test_func2);
-
-    init_schedule();
-}
-
-__attribute__((section(".text.boot")))
-__attribute__((naked))
-void boot()
-{   
-    __asm__ __volatile__(
-
-        //enable STIE
-        "csrr t0, sie\n"
-        "li t1, 0x20\n"
-        "or t0, t0, t1\n"
-        "csrw sie, t0\n"
-        
-        //setting sstatus SIE
-        "csrr t0, sstatus\n"
-        "li t1, 0x2\n"
-        "or t0, t0, t1\n"
-        "csrw sstatus, t0\n"
-
-        //setting trap handler
-        "la t0, kernel_entry\n"
-        "csrw stvec, t0\n"
-
-        //setting stack pointer
-        "add sp, %[stack_top], x0\n"
-        
-        "j kernel_main\n"
-        :
-        : [stack_top] "r" (__stack_top)
     );
 }

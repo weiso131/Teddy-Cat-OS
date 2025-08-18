@@ -1,6 +1,11 @@
 #pragma once
 
-#include "type.h"
+#include <type.h>
+
+struct sbiret {
+    long error;
+    long value;
+};
 
 void sbi_putchar(char ch);
 

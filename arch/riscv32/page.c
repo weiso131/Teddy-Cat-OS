@@ -1,6 +1,7 @@
-#include "page.h"
-#include "util.h"
-#include "csr.h"
+#include <arch/riscv32/page.h>
+#include <kernel/util.h>
+#include <arch/riscv32/csr.h>
+#include <type.h>
 
 extern uintptr_t __heap_map_start[], __heap_map_end[];
 extern char __heap_start[], __heap_end[];

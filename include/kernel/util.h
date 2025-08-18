@@ -1,6 +1,6 @@
 #pragma once
-#include "type.h"
-#include "timer.h"
+
+#include <type.h>
 
 #define va_list  __builtin_va_list
 #define va_start __builtin_va_start
