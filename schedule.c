@@ -1,6 +1,6 @@
 #include "schedule.h"
 
-
+extern char __kernel_base[], __heap_end[];
 struct task *current;
 
 #define PROCESS_MAX 32
@@ -51,8 +51,11 @@ void switch_context(struct task *current, struct task *next, uint32_t sp)
         "mv %0, t0\n"
         "csrw sepc, %1\n"
         "mv sp, %2\n"
+        "sfence.vma\n"
+        "csrw satp, %3\n"
+        "sfence.vma\n"
         : "=&r" (current->sepc)
-        : "r" (next->sepc), "r" (next->sp)
+        : "r" (next->sepc), "r" (next->sp), "r" (SATP_SV32 | ((uint32_t) next->page_table / PAGE_SIZE))
         : "t0", "memory"
     );    
 }
@@ -73,6 +76,15 @@ int create_process(uintptr_t func)
             break;
         }
     }
+
+    // Map kernel pages.
+    uint32_t *page_table = (uint32_t *) alloc_page();
+    for (uintptr_t paddr = (uintptr_t) __kernel_base;
+         paddr < (uintptr_t) __heap_end; paddr += PAGE_SIZE)
+        map_vpage(page_table, paddr, paddr, PAGE_R | PAGE_W | PAGE_X);
+
+    task->page_table = page_table;
+
 
     task->kernel_stack = (uint32_t*)alloc_page();//this will be replace in virtual memory future
     task->sepc = func;
