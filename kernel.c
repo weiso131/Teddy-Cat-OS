@@ -7,7 +7,7 @@
 extern char __bss[], __bss_end[], __stack_top[];;
 
 
-void handle_trap()
+void handle_trap(uint32_t sp)
 {
     static uint32_t ra;
     ra = READ_REG(ra);
@@ -17,11 +17,16 @@ void handle_trap()
     uint32_t user_pc = READ_CSR(sepc);
     if (scause == 0x80000005) {
         struct task *next = schedule();
-        switch_context(current, next);
+        switch_context(current, next, sp);
         current = next;
-        /* save the real ra*/
-        __asm__ __volatile__("sw %0, 12(sp)\n" ::"r"(ra));
         timer_wait(TIME_SLICE);
+        /* save the real ra*/
+        __asm__ __volatile__(
+            "mv ra, %0\n" 
+            "ret\n"
+            :
+            :"r"(ra)
+        );
     } else 
         PANIC("unexpected trap scause=%x, stval=%x, sepc=%x\n", scause, stval, user_pc);
 }
@@ -67,6 +72,7 @@ void kernel_entry(void)
         "csrr a0, sscratch\n"
         "sw a0, 4 * 30(sp)\n"
 
+        "mv a0, sp\n"
         "call handle_trap\n"
 
         "lw ra,  4 * 0(sp)\n"

@@ -43,15 +43,15 @@ struct task *schedule()
 
 }
 
-void switch_context(struct task *current, struct task *next) 
+void switch_context(struct task *current, struct task *next, uint32_t sp) 
 {
+    current->sp = sp;
     __asm__ __volatile__(
         "csrr t0, sepc\n"
         "mv %0, t0\n"
-        "mv %1, sp\n"
-        "csrw sepc, %2\n"
-        "mv sp, %3\n"
-        : "=&r" (current->sepc), "=&r" (current->sp)
+        "csrw sepc, %1\n"
+        "mv sp, %2\n"
+        : "=&r" (current->sepc)
         : "r" (next->sepc), "r" (next->sp)
         : "t0", "memory"
     );    
@@ -76,7 +76,7 @@ int create_process(uintptr_t func)
 
     task->kernel_stack = (uint32_t*)alloc_page();//this will be replace in virtual memory future
     task->sepc = func;
-    task->sp = (uintptr_t)task->kernel_stack + (1 << 12) - 4 * 31 - 16;//16 is stack pointer offset of handle_trap
+    task->sp = (uintptr_t)task->kernel_stack + (1 << 12) - 4 * 31;
     task->kernel_stack[1023] = (uintptr_t)task->kernel_stack + (1 << 12);
     return 0;
 }

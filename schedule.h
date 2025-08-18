@@ -14,7 +14,7 @@ extern struct task *current;
 
 int create_process(uintptr_t func);
 
-void switch_context(struct task *current, struct task *next);
+void switch_context(struct task *current, struct task *next, uint32_t sp);
 
 void init_schedule();
 
