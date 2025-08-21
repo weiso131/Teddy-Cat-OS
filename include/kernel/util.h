@@ -25,6 +25,22 @@ small:
     return buf;
 }
 
+inline static void memcpy(void *dest, void *src, size_t n)
+{
+    uint8_t *src_1 = (uint8_t *)src, *dest_1 = (uint8_t *)dest;
+    
+    while (n > SYSTEM_ARCH_BITS / 8) {
+        uintptr_t *src_full = (uintptr_t *)src_1, *dest_full = (uintptr_t *)dest_1;
+        *dest_full = *src_full;
+        src_1 += SYSTEM_ARCH_BITS / 8;
+        dest_1 += SYSTEM_ARCH_BITS / 8;
+        n -= SYSTEM_ARCH_BITS / 8;
+    }
+
+    while (n--)
+        *(dest_1++) = *(src_1++);
+}
+
 void printf(const char *fmt, ...);
 
 #define PANIC(fmt, ...)                                                        \
