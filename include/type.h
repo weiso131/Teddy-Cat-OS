@@ -21,4 +21,5 @@ struct task {
     uint32_t sepc, sp;
     uint32_t *kernel_stack;
     uint32_t *page_table;
+    uint8_t user;
 };

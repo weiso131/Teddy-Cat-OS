@@ -8,6 +8,7 @@ extern char __kernel_base[], __heap_end[];
 struct task *current;
 
 #define PROCESS_MAX 32
+#define USER_BASE 0x1000000
 
 uint32_t process_use = 0;
 struct task process_list[PROCESS_MAX];//this need to be replace by tree in future
@@ -39,7 +40,7 @@ struct task *schedule()
 
 }
 
-int create_process(uintptr_t func)
+int create_process(uintptr_t func, size_t size)
 {
     if (process_use == 0xFFFFFFFF) {
         printf("process list is full\n");
@@ -63,10 +64,22 @@ int create_process(uintptr_t func)
 
     task->page_table = page_table;
 
+    // Map user pages.
+    for (uintptr_t vaddr = 0;
+         vaddr < (uintptr_t) size; vaddr += PAGE_SIZE) {
+        char *page = alloc_page();
+        memcpy(page, (uint32_t *)(func + vaddr), min(PAGE_SIZE, size - vaddr));
+        map_vpage(page_table, USER_BASE + vaddr, (uint32_t)page, PAGE_R | PAGE_W | PAGE_X | PAGE_U);
+    }
 
     task->kernel_stack = (uint32_t*)alloc_page();//this will be replace in virtual memory future
     task->sepc = func;
     task->sp = (uintptr_t)task->kernel_stack + (1 << 12) - 4 * 31;
     task->kernel_stack[1023] = (uintptr_t)task->kernel_stack + (1 << 12);
+
+    if (size) {
+        task->user = 1;
+        task->sepc = USER_BASE;
+    }
     return 0;
 }

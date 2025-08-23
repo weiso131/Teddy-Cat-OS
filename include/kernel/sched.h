@@ -7,8 +7,11 @@
 
 extern struct task *current;
 
-int create_process(uintptr_t func);
+int create_process(uintptr_t func, size_t size);
 
 void init_schedule();
 
 struct task *schedule();
+
+#define create_kernel_process(func) create_process((uintptr_t)func, 0)
+#define create_user_process(start, size) create_process((uintptr_t)start, (size_t) size)
