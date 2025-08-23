@@ -53,3 +53,6 @@ static inline char is_aligned(uint32_t addr, uint32_t bit)
 {
     return !(addr & ((1 << bit) - 1));
 }
+
+#define min(a, b) a < b ? a : b
+#define max(a, b) a > b ? a : b
