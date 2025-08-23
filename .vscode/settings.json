@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "random": "c"
+    },
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true
+}
