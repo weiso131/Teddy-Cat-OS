@@ -33,12 +33,26 @@ inline static void switch_context(struct task *current, struct task *next, uint3
 
 inline static void start_task(struct task *current)
 {
+    if (current->user) {
+        uintptr_t sstatus = READ_CSR(sstatus);
+        sstatus &= ~(1 << 8); //set SPP to 0
+        sstatus |= (1 << 18) | (1 << 5); //enable SUM
+        WRITE_CSR(sstatus, sstatus);
+    } else {
+        uintptr_t sstatus = READ_CSR(sstatus);
+        sstatus |= 1 << 8 | (1 << 5); //set SPP to 1
+        WRITE_CSR(sstatus, sstatus);
+    }
+
     __asm__ __volatile__(
         "mv sp, %0\n"
-        "mv ra, %1\n"
-        "ret\n"
+        "csrw sepc, %1\n"
+        "sfence.vma\n"
+        "csrw satp, %2\n"
+        "sfence.vma\n"
+        "sret\n"
         :
-        : "r" (current->kernel_stack + (1 << 12)), "r" (current->sepc)
+        : "r" (current->kernel_stack + (1 << 12)), "r" (current->sepc), "r" (SATP_SV32 | ((uint32_t) current->page_table / PAGE_SIZE))
         : 
     );
 }
